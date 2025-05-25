@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Upload, Video, Check } from 'lucide-react';
+import { ArrowLeft, Upload, Video, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const StudentRegistration = () => {
@@ -21,6 +20,7 @@ const StudentRegistration = () => {
     confirmPassword: ''
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [consentAgreed, setConsentAgreed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -36,19 +36,51 @@ const StudentRegistration = () => {
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type.startsWith('video/')) {
-        setVideoFile(file);
+      // Check if it's a video file
+      if (!file.type.startsWith('video/')) {
         toast({
-          title: "Video Uploaded",
-          description: "Face recognition video uploaded successfully",
-        });
-      } else {
-        toast({
-          title: "Invalid File",
-          description: "Please upload a video file",
+          title: "Invalid File Type",
+          description: "Please upload a video file (MP4, MOV, AVI, etc.)",
           variant: "destructive",
         });
+        return;
       }
+
+      // Check file size (max 50MB)
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (file.size > maxSize) {
+        toast({
+          title: "File Too Large",
+          description: "Video file must be less than 50MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setVideoFile(file);
+      
+      // Create video preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setVideoPreview(previewUrl);
+      
+      toast({
+        title: "Video Uploaded Successfully",
+        description: `Face recognition video "${file.name}" uploaded successfully`,
+      });
+    }
+  };
+
+  const removeVideo = () => {
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
+    }
+    setVideoFile(null);
+    setVideoPreview(null);
+    
+    // Reset the file input
+    const fileInput = document.getElementById('video-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
     }
   };
 
@@ -58,7 +90,7 @@ const StudentRegistration = () => {
     if (!videoFile) {
       toast({
         title: "Video Required",
-        description: "Please upload a face video for registration",
+        description: "Please upload a face video for registration. This is mandatory for attendance tracking.",
         variant: "destructive",
       });
       return;
@@ -84,15 +116,21 @@ const StudentRegistration = () => {
 
     setIsLoading(true);
     
-    // Simulate registration
+    // Simulate video processing and registration
     setTimeout(() => {
       toast({
         title: "Registration Successful",
-        description: "Your account has been created. You can now login.",
+        description: "Your account has been created with face recognition data. You can now login.",
       });
+      
+      // Clean up video preview URL
+      if (videoPreview) {
+        URL.revokeObjectURL(videoPreview);
+      }
+      
       navigate('/');
       setIsLoading(false);
-    }, 2000);
+    }, 3000); // Longer timeout to simulate video processing
   };
 
   return (
@@ -221,39 +259,83 @@ const StudentRegistration = () => {
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Face Recognition Video</Label>
-                  <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
-                    <Video className="w-12 h-12 mx-auto text-slate-400 mb-4" />
-                    <div className="space-y-2">
-                      <p className="text-sm text-slate-600">
-                        Upload a short video of your face for recognition
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        Move your head slowly left and right for better accuracy
-                      </p>
-                      <div className="flex items-center justify-center">
-                        <label htmlFor="video-upload" className="cursor-pointer">
-                          <Button type="button" variant="outline" className="mt-2">
-                            <Upload className="w-4 h-4 mr-2" />
-                            Choose Video
-                          </Button>
-                          <input
-                            id="video-upload"
-                            type="file"
-                            accept="video/*"
-                            onChange={handleVideoUpload}
-                            className="hidden"
-                          />
-                        </label>
-                      </div>
-                      {videoFile && (
-                        <div className="flex items-center justify-center mt-2 text-green-600">
-                          <Check className="w-4 h-4 mr-1" />
-                          <span className="text-sm">Video uploaded: {videoFile.name}</span>
+                  <Label className="text-sm font-medium">
+                    Face Recognition Video <span className="text-red-500">*</span>
+                  </Label>
+                  
+                  {!videoFile ? (
+                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                      <Video className="w-12 h-12 mx-auto text-slate-400 mb-4" />
+                      <div className="space-y-2">
+                        <p className="text-sm text-slate-600 font-medium">
+                          Upload a short video of your face (Required)
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Move your head slowly left and right for better recognition accuracy
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Supported formats: MP4, MOV, AVI • Max size: 50MB
+                        </p>
+                        <div className="flex items-center justify-center">
+                          <label htmlFor="video-upload" className="cursor-pointer">
+                            <Button type="button" variant="outline" className="mt-2">
+                              <Upload className="w-4 h-4 mr-2" />
+                              Choose Video File
+                            </Button>
+                            <input
+                              id="video-upload"
+                              type="file"
+                              accept="video/*"
+                              onChange={handleVideoUpload}
+                              className="hidden"
+                              required
+                            />
+                          </label>
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center text-green-600">
+                          <Check className="w-4 h-4 mr-2" />
+                          <span className="text-sm font-medium">Video uploaded successfully</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={removeVideo}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <p className="text-sm text-slate-600">
+                          <strong>File:</strong> {videoFile.name}
+                        </p>
+                        <p className="text-sm text-slate-600">
+                          <strong>Size:</strong> {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </p>
+                        
+                        {videoPreview && (
+                          <div className="mt-3">
+                            <p className="text-xs text-slate-500 mb-2">Preview:</p>
+                            <video
+                              src={videoPreview}
+                              controls
+                              className="w-full max-w-sm h-32 object-cover rounded border"
+                              preload="metadata"
+                            >
+                              Your browser does not support video preview.
+                            </video>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-start space-x-2">
@@ -280,9 +362,9 @@ const StudentRegistration = () => {
               <Button
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={isLoading}
+                disabled={isLoading || !videoFile}
               >
-                {isLoading ? 'Creating Account...' : 'Register'}
+                {isLoading ? 'Processing Video & Creating Account...' : 'Register'}
               </Button>
             </form>
           </CardContent>

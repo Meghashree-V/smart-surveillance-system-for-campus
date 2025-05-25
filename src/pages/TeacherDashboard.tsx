@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle, XCircle, Clock, Users, FileText, LogOut, AlertCircle } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CheckCircle, XCircle, Clock, Users, FileText, LogOut, AlertCircle, Edit, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -12,10 +13,37 @@ const TeacherDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [pendingAttendance] = useState([
-    { usn: '1MS20CS001', name: 'John Doe', subject: 'Data Structures', date: '2024-01-16', entryTime: '8:45 AM', status: 'pending' },
-    { usn: '1MS20CS003', name: 'Mike Johnson', subject: 'Data Structures', date: '2024-01-16', entryTime: '8:50 AM', status: 'pending' },
-    { usn: '1MS20CS007', name: 'Alex Brown', subject: 'Computer Networks', date: '2024-01-15', entryTime: '10:45 AM', status: 'pending' },
+  const [pendingAttendance, setPendingAttendance] = useState([
+    { 
+      usn: '1MS20CS001', 
+      name: 'John Doe', 
+      subject: 'Data Structures', 
+      date: '2024-01-16', 
+      entryTime: '8:45 AM', 
+      status: 'pending',
+      image: '/lovable-uploads/70dbed93-5c1f-44d1-904e-0840187e2a24.png',
+      currentStatus: null
+    },
+    { 
+      usn: '1MS20CS003', 
+      name: 'Mike Johnson', 
+      subject: 'Data Structures', 
+      date: '2024-01-16', 
+      entryTime: '8:50 AM', 
+      status: 'pending',
+      image: '/lovable-uploads/70dbed93-5c1f-44d1-904e-0840187e2a24.png',
+      currentStatus: null
+    },
+    { 
+      usn: '1MS20CS007', 
+      name: 'Alex Brown', 
+      subject: 'Computer Networks', 
+      date: '2024-01-15', 
+      entryTime: '10:45 AM', 
+      status: 'pending',
+      image: '/lovable-uploads/70dbed93-5c1f-44d1-904e-0840187e2a24.png',
+      currentStatus: null
+    },
   ]);
 
   const [eventRequests] = useState([
@@ -28,6 +56,7 @@ const TeacherDashboard = () => {
       date: '2024-01-16',
       time: '09:00 AM',
       status: 'pending',
+      image: '/lovable-uploads/70dbed93-5c1f-44d1-904e-0840187e2a24.png',
       documents: ['permission_letter.pdf', 'event_selfie.jpg']
     },
     {
@@ -39,6 +68,7 @@ const TeacherDashboard = () => {
       date: '2024-01-15',
       time: '11:00 AM',
       status: 'pending',
+      image: '/lovable-uploads/70dbed93-5c1f-44d1-904e-0840187e2a24.png',
       documents: ['permission_letter.pdf', 'venue_photo.jpg']
     },
   ]);
@@ -50,9 +80,32 @@ const TeacherDashboard = () => {
   };
 
   const markAttendance = (usn: string, status: 'present' | 'absent') => {
+    setPendingAttendance(prev => 
+      prev.map(student => 
+        student.usn === usn 
+          ? { ...student, currentStatus: status }
+          : student
+      )
+    );
+    
     toast({
       title: "Attendance Updated",
-      description: `${usn} marked as ${status}`,
+      description: `${usn} marked as ${status}. You can edit this later if needed.`,
+    });
+  };
+
+  const editAttendance = (usn: string, newStatus: 'present' | 'absent') => {
+    setPendingAttendance(prev => 
+      prev.map(student => 
+        student.usn === usn 
+          ? { ...student, currentStatus: newStatus }
+          : student
+      )
+    );
+    
+    toast({
+      title: "Attendance Edited",
+      description: `${usn} attendance changed to ${newStatus}`,
     });
   };
 
@@ -107,38 +160,99 @@ const TeacherDashboard = () => {
                   {pendingAttendance.map((student, index) => (
                     <div key={index} className="border rounded-lg p-4 bg-orange-50">
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-medium text-slate-800">{student.name}</h3>
-                            <Badge variant="outline">{student.usn}</Badge>
-                          </div>
-                          <div className="text-sm text-slate-600 space-y-1">
-                            <p><strong>Subject:</strong> {student.subject}</p>
-                            <p><strong>Date:</strong> {student.date}</p>
-                            <p><strong>Gate Entry:</strong> {student.entryTime}</p>
-                            <p className="text-orange-600">
-                              <Clock className="w-4 h-4 inline mr-1" />
-                              Not detected in classroom
-                            </p>
+                        <div className="flex items-start gap-4 flex-1">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={student.image} alt={student.name} />
+                            <AvatarFallback>{student.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-medium text-slate-800">{student.name}</h3>
+                              <Badge variant="outline">{student.usn}</Badge>
+                              {student.currentStatus && (
+                                <Badge className={student.currentStatus === 'present' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                                  Marked: {student.currentStatus}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-sm text-slate-600 space-y-1">
+                              <p><strong>Subject:</strong> {student.subject}</p>
+                              <p><strong>Date:</strong> {student.date}</p>
+                              <p><strong>Gate Entry:</strong> {student.entryTime}</p>
+                              <p className="text-orange-600">
+                                <Clock className="w-4 h-4 inline mr-1" />
+                                Not detected in classroom
+                              </p>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-2 ml-4">
-                          <Button
-                            size="sm"
-                            onClick={() => markAttendance(student.usn, 'present')}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            Present
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => markAttendance(student.usn, 'absent')}
-                          >
-                            <XCircle className="w-4 h-4 mr-1" />
-                            Absent
-                          </Button>
+                        <div className="flex flex-col gap-2 ml-4">
+                          {!student.currentStatus ? (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => markAttendance(student.usn, 'present')}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Present
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => markAttendance(student.usn, 'absent')}
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Absent
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <Edit className="w-4 h-4 mr-1" />
+                                    Edit
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Edit Attendance</DialogTitle>
+                                    <DialogDescription>
+                                      Change attendance status for {student.name} ({student.usn})
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div className="flex items-center gap-4">
+                                      <Avatar>
+                                        <AvatarImage src={student.image} alt={student.name} />
+                                        <AvatarFallback>{student.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                        <p className="font-medium">{student.name}</p>
+                                        <p className="text-sm text-slate-600">{student.usn} • {student.subject}</p>
+                                        <p className="text-sm text-slate-500">{student.date} at {student.entryTime}</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        onClick={() => editAttendance(student.usn, 'present')}
+                                        className={student.currentStatus === 'present' ? 'bg-green-600' : 'bg-gray-300'}
+                                      >
+                                        Mark Present
+                                      </Button>
+                                      <Button
+                                        onClick={() => editAttendance(student.usn, 'absent')}
+                                        variant={student.currentStatus === 'absent' ? 'destructive' : 'outline'}
+                                      >
+                                        Mark Absent
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -161,22 +275,28 @@ const TeacherDashboard = () => {
                   {eventRequests.map((request) => (
                     <div key={request.id} className="border rounded-lg p-4">
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-medium text-slate-800">{request.name}</h3>
-                            <Badge variant="outline">{request.usn}</Badge>
-                          </div>
-                          <div className="text-sm text-slate-600 space-y-1">
-                            <p><strong>Event:</strong> {request.eventName}</p>
-                            <p><strong>Subject:</strong> {request.subject}</p>
-                            <p><strong>Date & Time:</strong> {request.date} at {request.time}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <span><strong>Documents:</strong></span>
-                              {request.documents.map((doc, idx) => (
-                                <Badge key={idx} variant="secondary" className="text-xs">
-                                  {doc}
-                                </Badge>
-                              ))}
+                        <div className="flex items-start gap-4 flex-1">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={request.image} alt={request.name} />
+                            <AvatarFallback>{request.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-medium text-slate-800">{request.name}</h3>
+                              <Badge variant="outline">{request.usn}</Badge>
+                            </div>
+                            <div className="text-sm text-slate-600 space-y-1">
+                              <p><strong>Event:</strong> {request.eventName}</p>
+                              <p><strong>Subject:</strong> {request.subject}</p>
+                              <p><strong>Date & Time:</strong> {request.date} at {request.time}</p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span><strong>Documents:</strong></span>
+                                {request.documents.map((doc, idx) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    {doc}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         </div>

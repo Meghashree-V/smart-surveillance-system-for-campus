@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Upload, Camera, BookOpen, Phone, Calendar } from 'lucide-react';
 import ClassroomCapture from '@/components/ClassroomCapture';
 import TimetableUpload from '@/components/TimetableUpload';
+import StudentManagement from '@/components/StudentManagement';
 
 const CCDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -108,15 +109,7 @@ const CCDashboard = () => {
           </TabsContent>
 
           <TabsContent value="students">
-            <Card>
-              <CardHeader>
-                <CardTitle>Student Management</CardTitle>
-                <CardDescription>Add parent contacts and manage student information</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-slate-600">Student management interface will be implemented here.</p>
-              </CardContent>
-            </Card>
+            <StudentManagement />
           </TabsContent>
 
           <TabsContent value="timetable">

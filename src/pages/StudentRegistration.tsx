@@ -1,0 +1,295 @@
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, Upload, Video, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+const StudentRegistration = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    usn: '',
+    semester: '',
+    section: '',
+    branch: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [consentAgreed, setConsentAgreed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith('video/')) {
+        setVideoFile(file);
+        toast({
+          title: "Video Uploaded",
+          description: "Face recognition video uploaded successfully",
+        });
+      } else {
+        toast({
+          title: "Invalid File",
+          description: "Please upload a video file",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!videoFile) {
+      toast({
+        title: "Video Required",
+        description: "Please upload a face video for registration",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!consentAgreed) {
+      toast({
+        title: "Consent Required",
+        description: "Please agree to the face data usage terms",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Simulate registration
+    setTimeout(() => {
+      toast({
+        title: "Registration Successful",
+        description: "Your account has been created. You can now login.",
+      });
+      navigate('/');
+      setIsLoading(false);
+    }, 2000);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 p-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Login
+          </Button>
+          
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">Student Registration</h1>
+            <p className="text-slate-600">Create your account for the Campus Surveillance System</p>
+          </div>
+        </div>
+
+        <Card className="shadow-lg border-0">
+          <CardHeader>
+            <CardTitle>Registration Form</CardTitle>
+            <CardDescription>
+              Fill in your details to register for the system
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="usn">USN (University Seat Number)</Label>
+                  <Input
+                    id="usn"
+                    value={formData.usn}
+                    onChange={(e) => handleInputChange('usn', e.target.value)}
+                    placeholder="e.g., 1MS20CS001"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="semester">Semester</Label>
+                  <Select value={formData.semester} onValueChange={(value) => handleInputChange('semester', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+                        <SelectItem key={sem} value={sem.toString()}>
+                          Semester {sem}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="section">Section</Label>
+                  <Select value={formData.section} onValueChange={(value) => handleInputChange('section', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select section" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['A', 'B', 'C', 'D'].map(section => (
+                        <SelectItem key={section} value={section}>
+                          Section {section}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="branch">Branch</Label>
+                  <Select value={formData.branch} onValueChange={(value) => handleInputChange('branch', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CSE">Computer Science Engineering</SelectItem>
+                      <SelectItem value="ECE">Electronics & Communication</SelectItem>
+                      <SelectItem value="ME">Mechanical Engineering</SelectItem>
+                      <SelectItem value="Civil">Civil Engineering</SelectItem>
+                      <SelectItem value="EEE">Electrical Engineering</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    placeholder="Create a password"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                    placeholder="Confirm your password"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Face Recognition Video</Label>
+                  <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
+                    <Video className="w-12 h-12 mx-auto text-slate-400 mb-4" />
+                    <div className="space-y-2">
+                      <p className="text-sm text-slate-600">
+                        Upload a short video of your face for recognition
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Move your head slowly left and right for better accuracy
+                      </p>
+                      <div className="flex items-center justify-center">
+                        <label htmlFor="video-upload" className="cursor-pointer">
+                          <Button type="button" variant="outline" className="mt-2">
+                            <Upload className="w-4 h-4 mr-2" />
+                            Choose Video
+                          </Button>
+                          <input
+                            id="video-upload"
+                            type="file"
+                            accept="video/*"
+                            onChange={handleVideoUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                      {videoFile && (
+                        <div className="flex items-center justify-center mt-2 text-green-600">
+                          <Check className="w-4 h-4 mr-1" />
+                          <span className="text-sm">Video uploaded: {videoFile.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="consent"
+                    checked={consentAgreed}
+                    onCheckedChange={(checked) => setConsentAgreed(checked as boolean)}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label
+                      htmlFor="consent"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      I agree to the use of my face data
+                    </Label>
+                    <p className="text-xs text-slate-500">
+                      Your face data will be used for attendance tracking and campus security purposes only.
+                      This data will be securely stored and not shared with third parties.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Creating Account...' : 'Register'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default StudentRegistration;

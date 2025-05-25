@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Upload, Camera, BookOpen, Phone, Calendar } from 'lucide-react';
 import ClassroomCapture from '@/components/ClassroomCapture';
+import TimetableUpload from '@/components/TimetableUpload';
 
 const CCDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -120,15 +120,7 @@ const CCDashboard = () => {
           </TabsContent>
 
           <TabsContent value="timetable">
-            <Card>
-              <CardHeader>
-                <CardTitle>Timetable Management</CardTitle>
-                <CardDescription>Upload and manage class schedules</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-slate-600">Timetable upload interface will be implemented here.</p>
-              </CardContent>
-            </Card>
+            <TimetableUpload />
           </TabsContent>
 
           <TabsContent value="capture">

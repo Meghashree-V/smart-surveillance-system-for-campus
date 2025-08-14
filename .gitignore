@@ -28,3 +28,5 @@ dist-ssr
 .env.example
 
 serviceAccountKey.json
+backend/secrets/driveServiceAccountKey.json
+frontend/secrets/driveServiceAccountKey.json

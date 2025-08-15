@@ -30,17 +30,46 @@ const Index = () => {
     }
 
     setIsLoading(true);
-    
-    // Simulate authentication
+
+    if (userType === 'admin') {
+      try {
+        const { getAdminByUsername } = await import('../lib/firestoreHelpers');
+        const admin = await getAdminByUsername(username);
+        if (!admin || admin.password !== password) {
+          toast({
+            title: "Invalid Credentials",
+            description: "Incorrect admin username or password.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        localStorage.setItem('userType', userType);
+        localStorage.setItem('username', username);
+        toast({
+          title: "Login Successful",
+          description: `Welcome to the Campus Surveillance System`,
+        });
+        navigate('/admin-dashboard');
+      } catch (err) {
+        toast({
+          title: "Login Error",
+          description: "Could not validate admin credentials.",
+          variant: "destructive",
+        });
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    // Simulate authentication for other user types
     setTimeout(() => {
       localStorage.setItem('userType', userType);
       localStorage.setItem('username', username);
-      
       toast({
         title: "Login Successful",
         description: `Welcome to the Campus Surveillance System`,
       });
-      
       // Navigate based on user type
       switch (userType) {
         case 'student':
@@ -52,14 +81,10 @@ const Index = () => {
         case 'teacher':
           navigate('/teacher-dashboard');
           break;
-        case 'admin':
-          navigate('/admin-dashboard');
-          break;
       }
       setIsLoading(false);
     }, 1000);
   };
-
   const userTypeIcons = {
     student: GraduationCap,
     cc: Users,
@@ -170,18 +195,7 @@ const Index = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-slate-600">
-                New student?{' '}
-                <Button
-                  variant="link"
-                  className="p-0 h-auto text-blue-600 hover:text-blue-700"
-                  onClick={() => navigate('/student-registration')}
-                >
-                  Register here
-                </Button>
-              </p>
-            </div>
+            
           </CardContent>
         </Card>
       </div>

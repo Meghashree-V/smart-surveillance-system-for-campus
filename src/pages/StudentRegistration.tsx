@@ -1,54 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Upload, Video, Check, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+// Student self-registration is disabled. This file is intentionally blank and safe to import.
+export default function StudentRegistration() { return null; }
 
-const StudentRegistration = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    usn: '',
-    semester: '',
-    section: '',
-    branch: '',
-    password: '',
-    confirmPassword: ''
-  });
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [consentAgreed, setConsentAgreed] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Check if it's a video file
-      if (!file.type.startsWith('video/')) {
-        toast({
-          title: "Invalid File Type",
-          description: "Please upload a video file (MP4, MOV, AVI, etc.)",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check file size (max 50MB)
-      const maxSize = 50 * 1024 * 1024; // 50MB
-      if (file.size > maxSize) {
         toast({
           title: "File Too Large",
           description: "Video file must be less than 50MB",
@@ -86,7 +38,7 @@ const StudentRegistration = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!videoFile) {
       toast({
         title: "Video Required",
@@ -115,22 +67,49 @@ const StudentRegistration = () => {
     }
 
     setIsLoading(true);
-    
-    // Simulate video processing and registration
-    setTimeout(() => {
+
+    try {
+      // TODO: Upload video to storage and get URL (currently using placeholder)
+      const videoUrl = 'uploaded/video/path/or/url';
+      await addStudent({
+        name: formData.name,
+        usn: formData.usn,
+        semester: formData.semester,
+        section: formData.section,
+        branch: formData.branch,
+        password: formData.password,
+        email: formData.email,
+        phone: formData.phone,
+        parentDetails: formData.parentDetails,
+        address: formData.address,
+        videoUrl,
+        consentGiven: consentAgreed
+      });
       toast({
         title: "Registration Successful",
-        description: "Your account has been created with face recognition data. You can now login.",
+        description: "Your account has been created and stored in Firestore. You can now login.",
       });
-      
-      // Clean up video preview URL
       if (videoPreview) {
         URL.revokeObjectURL(videoPreview);
       }
-      
-      navigate('/');
-      setIsLoading(false);
-    }, 3000); // Longer timeout to simulate video processing
+      setFormData({
+        name: '', usn: '', semester: '', section: '', branch: '', password: '', confirmPassword: '', email: '', phone: '', address: '',
+        parentDetails: { fatherName: '', fatherPhone: '', motherName: '', motherPhone: '' }
+      });
+      setVideoFile(null);
+      setVideoPreview(null);
+      setConsentAgreed(false);
+      setTimeout(() => {
+        navigate('/');
+      }, 1000);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to register student. Please try again.",
+        variant: "destructive",
+      });
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -162,6 +141,71 @@ const StudentRegistration = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div className="space-y-2">
+    <Label htmlFor="email">Email</Label>
+    <Input
+      id="email"
+      type="email"
+      value={formData.email}
+      onChange={(e) => handleInputChange('email', e.target.value)}
+      placeholder="Enter your email address"
+      required
+    />
+  </div>
+  <div className="space-y-2">
+    <Label htmlFor="phone">Phone</Label>
+    <Input
+      id="phone"
+      type="tel"
+      value={formData.phone}
+      onChange={(e) => handleInputChange('phone', e.target.value)}
+      placeholder="Enter your phone number"
+      required
+    />
+  </div>
+  <div className="space-y-2 md:col-span-2">
+    <Label htmlFor="address">Address</Label>
+    <Input
+      id="address"
+      value={formData.address}
+      onChange={(e) => handleInputChange('address', e.target.value)}
+      placeholder="Enter your address"
+      required
+    />
+  </div>
+  <div className="space-y-2 md:col-span-2">
+    <Label>Parent Details</Label>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Input
+        id="fatherName"
+        value={formData.parentDetails.fatherName}
+        onChange={(e) => handleInputChange('fatherName', e.target.value)}
+        placeholder="Father's Name"
+        required
+      />
+      <Input
+        id="fatherPhone"
+        value={formData.parentDetails.fatherPhone}
+        onChange={(e) => handleInputChange('fatherPhone', e.target.value)}
+        placeholder="Father's Phone"
+        required
+      />
+      <Input
+        id="motherName"
+        value={formData.parentDetails.motherName}
+        onChange={(e) => handleInputChange('motherName', e.target.value)}
+        placeholder="Mother's Name"
+        required
+      />
+      <Input
+        id="motherPhone"
+        value={formData.parentDetails.motherPhone}
+        onChange={(e) => handleInputChange('motherPhone', e.target.value)}
+        placeholder="Mother's Phone"
+        required
+      />
+    </div>
+  </div>
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <Input
@@ -374,4 +418,4 @@ const StudentRegistration = () => {
   );
 };
 
-export default StudentRegistration;
+

@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, getDocs as getDocsAlias } from 'firebase/firestore';
 
 // Add a new student with all required fields
 export async function addStudent({
@@ -69,7 +69,10 @@ export async function addSubjectTeacher({
   status = 'pending',
   createdAt = new Date().toISOString(),
   passwordChanged = false,
-  tempPassword
+  tempPassword,
+  semester = '',
+  subject = '',
+  subjectCode = ''
 }) {
   const docRef = await addDoc(collection(db, 'subject_teachers'), {
     username,
@@ -80,20 +83,30 @@ export async function addSubjectTeacher({
     status,
     createdAt,
     passwordChanged,
-    tempPassword
+    tempPassword,
+    semester,
+    subject,
+    subjectCode
   });
   return docRef.id;
-}
-// Fetch all class coordinators
-import { getDocs } from 'firebase/firestore';
-
-export async function getAllClassCoordinators() {
-  const snapshot = await getDocs(collection(db, 'class_coordinators'));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
 // Fetch all subject teachers
 export async function getAllSubjectTeachers() {
   const snapshot = await getDocs(collection(db, 'subject_teachers'));
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+// Fetch all class coordinators
+export async function getAllClassCoordinators() {
+  const snapshot = await getDocs(collection(db, 'class_coordinators'));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+// Fetch admin by username
+export async function getAdminByUsername(username) {
+  const q = query(collection(db, 'admins'), where('username', '==', username));
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
 }

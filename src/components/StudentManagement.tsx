@@ -12,11 +12,49 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Plus, Edit, Phone, Mail, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+import { addStudent } from '../lib/firestoreHelpers';
+
 const StudentManagement = () => {
   const { toast } = useToast();
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  
+
+  const [newStudent, setNewStudent] = useState({
+    usn: '', name: '', semester: '', section: '', branch: '', email: '', phone: '',
+    parentDetails: { fatherName: '', fatherPhone: '', motherName: '', motherPhone: '' },
+    address: '', password: '', videoUrl: '', consentGiven: false
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    if (["fatherName", "fatherPhone", "motherName", "motherPhone"].includes(id)) {
+      setNewStudent(prev => ({
+        ...prev,
+        parentDetails: { ...prev.parentDetails, [id]: value }
+      }));
+    } else {
+      setNewStudent(prev => ({ ...prev, [id]: value }));
+    }
+  };
+
+  const handleAddStudent = async () => {
+    setIsSubmitting(true);
+    try {
+      await addStudent(newStudent);
+      toast({ title: "Student Added", description: "Student has been added to Firestore." });
+      setIsAddDialogOpen(false);
+      setNewStudent({
+        usn: '', name: '', semester: '', section: '', branch: '', email: '', phone: '',
+        parentDetails: { fatherName: '', fatherPhone: '', motherName: '', motherPhone: '' },
+        address: '', password: '', videoUrl: '', consentGiven: false
+      });
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to add student." });
+    }
+    setIsSubmitting(false);
+  };
+
   const [students] = useState([
     {
       id: 1,
@@ -71,86 +109,8 @@ const StudentManagement = () => {
           <h2 className="text-2xl font-bold">Student Management</h2>
           <p className="text-slate-600">Manage students and their parent contact details</p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Student
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New Student</DialogTitle>
-              <DialogDescription>Add student details and parent contact information</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="usn">USN</Label>
-                  <Input id="usn" placeholder="1MS20CS001" />
-                </div>
-                <div>
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="Student Name" />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="semester">Semester</Label>
-                  <Input id="semester" placeholder="6th" />
-                </div>
-                <div>
-                  <Label htmlFor="section">Section</Label>
-                  <Input id="section" placeholder="A" />
-                </div>
-                <div>
-                  <Label htmlFor="branch">Branch</Label>
-                  <Input id="branch" placeholder="CSE" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="student@college.edu" />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" placeholder="+91 9876543210" />
-                </div>
-              </div>
-              <div className="space-y-4">
-                <h4 className="font-medium">Parent Details</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="fatherName">Father's Name</Label>
-                    <Input id="fatherName" placeholder="Father's Name" />
-                  </div>
-                  <div>
-                    <Label htmlFor="fatherPhone">Father's Phone</Label>
-                    <Input id="fatherPhone" placeholder="+91 9876543211" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="motherName">Mother's Name</Label>
-                    <Input id="motherName" placeholder="Mother's Name" />
-                  </div>
-                  <div>
-                    <Label htmlFor="motherPhone">Mother's Phone</Label>
-                    <Input id="motherPhone" placeholder="+91 9876543212" />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="address">Address</Label>
-                  <Input id="address" placeholder="Complete Address" />
-                </div>
-              </div>
-              <Button onClick={() => handleAddParentDetails(0)} className="w-full">
-                Add Student
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        
+
       </div>
 
       <Card>

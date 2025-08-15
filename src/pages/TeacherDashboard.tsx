@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import AutoMarkedAttendanceSection from '../components/AutoMarkedAttendanceSection';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,8 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 const TeacherDashboard = () => {
+  // Get teacher username from localStorage (or auth context)
+  const [teacherUsername] = useState(() => localStorage.getItem('username') || '');
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -324,6 +327,8 @@ const TeacherDashboard = () => {
                 </div>
               </CardContent>
             </Card>
+            {/* Auto-Marked Attendance Section */}
+            <AutoMarkedAttendanceSection teacherUsername={teacherUsername} />
           </div>
 
           {/* Right Column */}

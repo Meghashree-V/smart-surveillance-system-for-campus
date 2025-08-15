@@ -1,5 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { addSubjectTeacher, addClassCoordinator, getAllClassCoordinators, getAllSubjectTeachers } from '../lib/firestoreHelpers.js';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,31 +27,28 @@ interface User {
 }
 
 const UserManagement = () => {
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: '1',
-      username: 'cc001',
-      name: 'Dr. Sarah Wilson',
-      email: 'sarah.wilson@college.edu',
-      role: 'cc',
-      department: 'Computer Science',
-      status: 'active',
-      createdAt: '2024-01-15',
-      lastLogin: '2024-01-16 08:45',
-      passwordChanged: true
-    },
-    {
-      id: '2',
-      username: 'teacher001',
-      name: 'Prof. John Smith',
-      email: 'john.smith@college.edu',
-      role: 'teacher',
-      department: 'Computer Science',
-      status: 'pending',
-      createdAt: '2024-01-16',
-      passwordChanged: false
+  const [users, setUsers] = useState<User[]>([]);
+
+  // Fetch all users from Firestore
+  const fetchUsers = async () => {
+    try {
+      const [ccs, teachers] = await Promise.all([
+        getAllClassCoordinators(),
+        getAllSubjectTeachers()
+      ]);
+      // Add role property to each user
+      const ccUsers = ccs.map(u => ({ ...u, role: 'cc' as const }));
+      const teacherUsers = teachers.map(u => ({ ...u, role: 'teacher' as const }));
+      setUsers([...ccUsers, ...teacherUsers]);
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to fetch users from Firestore.', variant: 'destructive' });
     }
-  ]);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    // eslint-disable-next-line
+  }, []);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -60,7 +59,10 @@ const UserManagement = () => {
     email: '',
     role: 'cc' as 'cc' | 'teacher',
     department: '',
-    tempPassword: ''
+    tempPassword: '',
+    semester: '',
+    subject: '',
+    subjectCode: ''
   });
 
   const { toast } = useToast();
@@ -70,10 +72,12 @@ const UserManagement = () => {
     setNewUser(prev => ({ ...prev, tempPassword: password }));
   };
 
-  const handleCreateUser = (e: React.FormEvent) => {
+  
+
+const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newUser.username || !newUser.name || !newUser.email || !newUser.department || !newUser.tempPassword) {
+    if (!newUser.username || !newUser.name || !newUser.email || !newUser.department || !newUser.tempPassword || (newUser.role === 'teacher' && (!newUser.semester || !newUser.subject || !newUser.subjectCode))) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -82,31 +86,54 @@ const UserManagement = () => {
       return;
     }
 
-    const user: User = {
-      id: Date.now().toString(),
-      ...newUser,
-      status: 'pending',
-      createdAt: new Date().toISOString().split('T')[0],
-      passwordChanged: false
-    };
-
-    setUsers(prev => [...prev, user]);
-    
-    // Simulate sending email
-    toast({
-      title: "User Created Successfully",
-      description: `Account created for ${newUser.name}. Login credentials have been sent via email.`,
-    });
-
-    setNewUser({
-      username: '',
-      name: '',
-      email: '',
-      role: 'cc',
-      department: '',
-      tempPassword: ''
-    });
-    setIsCreateDialogOpen(false);
+    try {
+      if (newUser.role === 'teacher') {
+        await addSubjectTeacher({
+          username: newUser.username,
+          name: newUser.name,
+          email: newUser.email,
+          role: 'teacher',
+          department: newUser.department,
+          tempPassword: newUser.tempPassword,
+          semester: newUser.semester,
+          subject: newUser.subject,
+          subjectCode: newUser.subjectCode
+        });
+      } else {
+        await addClassCoordinator({
+          username: newUser.username,
+          name: newUser.name,
+          email: newUser.email,
+          role: 'cc',
+          department: newUser.department,
+          tempPassword: newUser.tempPassword
+        });
+      }
+      toast({
+        title: "User Created Successfully",
+        description: `Account created for ${newUser.name} and stored in Firestore.`,
+      });
+      setNewUser({
+        username: '',
+        name: '',
+        email: '',
+        role: 'cc',
+        department: '',
+        tempPassword: '',
+        semester: '',
+        subject: '',
+        subjectCode: ''
+      });
+      setIsCreateDialogOpen(false);
+      // Refresh users from Firestore
+      fetchUsers();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to create user in Firestore.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteUser = (userId: string) => {
@@ -209,6 +236,41 @@ const UserManagement = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {newUser.role === 'teacher' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="semester">Semester</Label>
+                      <Input
+                        id="semester"
+                        value={newUser.semester}
+                        onChange={e => setNewUser(prev => ({...prev, semester: e.target.value}))}
+                        placeholder="e.g., 5"
+                        required={newUser.role === 'teacher'}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject</Label>
+                      <Input
+                        id="subject"
+                        value={newUser.subject}
+                        onChange={e => setNewUser(prev => ({...prev, subject: e.target.value}))}
+                        placeholder="e.g., Data Structures"
+                        required={newUser.role === 'teacher'}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subjectCode">Subject Code</Label>
+                      <Input
+                        id="subjectCode"
+                        value={newUser.subjectCode}
+                        onChange={e => setNewUser(prev => ({...prev, subjectCode: e.target.value}))}
+                        placeholder="e.g., CS501"
+                        required={newUser.role === 'teacher'}
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="department">Department/Branch</Label>
